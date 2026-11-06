@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Tõejaht – õppemäng väärinfo äratundmiseks</title>
+<meta name="description" content="Tõejaht – õppemäng, mis õpetab ära tundma väärinfot, petusõnumeid ja manipuleerimist.">
+<meta name="author" content="Vladislav Lustik, Mirko Siimon">
+<meta name="theme-color" content="#1F5FD6">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='13' cy='13' r='9' fill='none' stroke='%231F5FD6' stroke-width='4'/%3E%3Ccircle cx='13' cy='13' r='4' fill='%231F5FD6'/%3E%3Cpath d='M20 20l8 8' stroke='%231F5FD6' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="et_EE">
+<meta property="og:title" content="Tõejaht – kas sa tunned vale ära?">
+<meta property="og:description" content="Õppemäng, kus oled faktikontrollija: 18 juhtumit, 3 raskusastet, ~7 minutit.">
+<meta property="og:image" content="og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: büroolaud – üks lai töölaud (mäng) uudisvoo kaartide ja "templite" keskel; ülejäänu kitsas lugemisveerg */
+:root{
+  --paper:#EEF2F7; --surface:#FFFFFF; --surface-2:#E3E9F2; --line:#C9D3E1;
+  --ink:#0D1B2E; --ink-2:#4A5A70; --ink-3:#7D8BA0;
+  --blue:#1F5FD6; --blue-ink:#FFFFFF; --blue-soft:#DCE7FB;
+  --stamp-true:#178A5E; --stamp-false:#D23B3B; --flag:#C98400; --flag-soft:#FFF1D2;
+  --true-soft:#DDF3E9; --false-soft:#FBE2E2;
+  --shadow:0 1px 2px rgba(13,27,46,.06),0 8px 28px rgba(13,27,46,.10);
+  --f-display:"Bricolage Grotesque","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0A111D; --surface:#121C2C; --surface-2:#1A2638; --line:#26354B;
+  --ink:#E8EEF7; --ink-2:#A6B4C8; --ink-3:#6F8098;
+  --blue:#5B8DF0; --blue-ink:#071226; --blue-soft:#17284A;
+  --stamp-true:#3CC98F; --stamp-false:#FF6B6B; --flag:#F2B544; --flag-soft:#33280F;
+  --true-soft:#0F2E23; --false-soft:#3A1717;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0A111D; --surface:#121C2C; --surface-2:#1A2638; --line:#26354B;
+  --ink:#E8EEF7; --ink-2:#A6B4C8; --ink-3:#6F8098;
+  --blue:#5B8DF0; --blue-ink:#071226; --blue-soft:#17284A;
+  --stamp-true:#3CC98F; --stamp-false:#FF6B6B; --flag:#F2B544; --flag-soft:#33280F;
+  --true-soft:#0F2E23; --false-soft:#3A1717;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--paper)}
+a{color:var(--blue)}
+h1,h2,h3{font-family:var(--f-display);line-height:1.05;text-wrap:balance;margin:0}
+p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.eyebrow{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.mono{font-family:var(--f-mono)}
+
+/* nav */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--paper) 82%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.nav .wrap{display:flex;align-items:center;gap:20px;height:62px}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:800;font-size:1.3rem;text-decoration:none;color:var(--ink);letter-spacing:-.02em}
+.logo-mark{width:30px;height:30px;border-radius:50%;border:2.5px solid var(--ink);position:relative;flex:none}
+.logo-mark::after{content:"";position:absolute;width:11px;height:2.5px;background:var(--ink);right:-8px;bottom:-1px;transform:rotate(45deg);border-radius:2px}
+.logo-mark::before{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--blue)}
+.nav-links{display:flex;gap:4px;margin-left:auto}
+.nav-links a{color:var(--ink-2);text-decoration:none;font-weight:500;font-size:.94rem;padding:6px 12px;border-radius:999px;transition:background .2s,color .2s}
+.nav-links a:hover{background:var(--surface-2);color:var(--ink)}
+.theme-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;flex:none}
+.theme-btn svg{width:18px;height:18px}
+@media (max-width:760px){.nav-links{display:none}.theme-btn{margin-left:auto}}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:10px;border:0;cursor:pointer;font-weight:600;font-size:1rem;padding:14px 22px;border-radius:999px;text-decoration:none;transition:transform .15s ease,box-shadow .2s,background .2s}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--blue);color:var(--blue-ink);box-shadow:0 6px 20px color-mix(in srgb,var(--blue) 35%,transparent)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px color-mix(in srgb,var(--blue) 45%,transparent)}
+.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn-ghost:hover{background:var(--surface)}
+
+/* hero */
+.hero{overflow-x:clip;padding-block:clamp(40px,7vw,90px) clamp(30px,5vw,60px)}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.hero h1{font-size:clamp(2.6rem,6.4vw,5.4rem);font-weight:800;letter-spacing:-.035em}
+.hero h1 .strike{position:relative;white-space:nowrap}
+.hero h1 .strike::after{content:"";position:absolute;left:-2%;right:-2%;top:54%;height:.09em;background:var(--stamp-false);border-radius:4px;transform-origin:left;animation:strike 1s .6s cubic-bezier(.7,0,.2,1) both}
+.hero h1 em{font-style:normal;color:var(--blue)}
+@keyframes strike{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.hero-copy{display:flex;flex-direction:column;gap:22px;min-width:0}
+.hero-lead{font-size:clamp(1.05rem,1.6vw,1.22rem);color:var(--ink-2);max-width:34em}
+.hero-cta{display:flex;flex-wrap:wrap;gap:12px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:22px;padding-top:6px}
+.hero-meta div{display:flex;flex-direction:column}
+.hero-meta b{font-family:var(--f-display);font-size:1.8rem;line-height:1}
+.hero-meta span{font-size:.85rem;color:var(--ink-3)}
+
+.deck{position:relative;height:420px;max-width:100%}
+.mini{position:absolute;left:50%;top:50%;width:min(330px,88%);background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:18px;display:flex;flex-direction:column;gap:12px;transition:transform .8s cubic-bezier(.2,.8,.2,1),opacity .6s}
+.mini-head{display:flex;gap:10px;align-items:center}
+.avatar{width:38px;height:38px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-family:var(--f-display);color:#fff}
+.mini-head b{font-size:.92rem;display:block;line-height:1.2}
+.mini-head small{color:var(--ink-3);font-size:.78rem}
+.mini p{font-size:.95rem;line-height:1.45}
+.mini .bar{height:8px;border-radius:4px;background:var(--surface-2)}
+.stamp{position:absolute;font-family:var(--f-display);font-weight:800;letter-spacing:.06em;text-transform:uppercase;border:4px solid currentColor;border-radius:10px;padding:4px 14px;font-size:1.5rem;pointer-events:none;mix-blend-mode:multiply}
+:root[data-theme="dark"] .stamp{mix-blend-mode:normal}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .stamp{mix-blend-mode:normal}}
+.stamp.t{color:var(--stamp-true)} .stamp.f{color:var(--stamp-false)}
+.mini .stamp{right:16px;bottom:22px;transform:rotate(-12deg) scale(2.4);opacity:0}
+.mini.stamped .stamp{animation:slam .45s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes slam{0%{opacity:0;transform:rotate(-12deg) scale(2.4)}60%{opacity:1;transform:rotate(-12deg) scale(.92)}100%{opacity:1;transform:rotate(-12deg) scale(1)}}
+
+/* sections */
+section{scroll-margin-top:80px}
+.band{padding-block:clamp(56px,8vw,100px)}
+.sec-head{display:flex;flex-direction:column;gap:12px;margin-bottom:36px;max-width:44em}
+.sec-head h2{font-size:clamp(2rem,4.2vw,3.2rem);font-weight:800;letter-spacing:-.03em}
+.sec-head p{color:var(--ink-2);font-size:1.08rem}
+
+/* GAME */
+.desk{background:var(--surface);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;position:relative}
+.hud{display:flex;flex-wrap:wrap;align-items:center;gap:10px 22px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.hud-item{display:flex;flex-direction:column;line-height:1.15}
+.hud-item .eyebrow{font-size:.66rem}
+.hud-item b{font-family:var(--f-mono);font-size:1.15rem;font-variant-numeric:tabular-nums}
+.lives{display:flex;gap:5px;padding-top:3px}
+.life{width:16px;height:16px;border-radius:50%;background:var(--blue);transition:transform .3s,background .3s}
+.life.lost{background:var(--line);transform:scale(.7)}
+.combo{margin-left:auto;font-family:var(--f-mono);font-weight:700;font-size:.85rem;padding:6px 12px;border-radius:999px;background:var(--flag-soft);color:var(--flag);opacity:0;transform:scale(.8);transition:all .25s}
+.combo.on{opacity:1;transform:scale(1)}
+.timer{height:5px;background:var(--line);position:relative}
+.timer i{position:absolute;inset:0 auto 0 0;width:100%;background:var(--blue);transform-origin:left;transition:background .3s}
+.timer.low i{background:var(--stamp-false)}
+
+.stage{min-height:600px;display:grid;place-items:center;padding:28px 18px;position:relative}
+.screen{width:100%;max-width:880px;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;animation:rise .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes rise{from{transform:translateY(16px)}to{transform:none}}
+.screen h3{font-size:clamp(1.8rem,3.4vw,2.6rem);font-weight:800;letter-spacing:-.025em}
+.screen .lead{color:var(--ink-2);max-width:36em}
+.levels{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:100%;text-align:left}
+.lvl{border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:6px;background:var(--paper)}
+.lvl b{font-family:var(--f-display);font-size:1.2rem}
+.lvl span{font-size:.88rem;color:var(--ink-2)}
+.keys{font-size:.85rem;color:var(--ink-3)}
+kbd{font-family:var(--f-mono);font-size:.78rem;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:1px 6px;background:var(--surface)}
+
+.play{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:28px;width:100%;max-width:940px;align-items:start}
+.play-main{display:flex;flex-direction:column;align-items:center;gap:18px;min-width:0}
+.case-no{font-family:var(--f-mono);font-size:.8rem;color:var(--ink-3);letter-spacing:.1em}
+.card-zone{position:relative;width:100%;max-width:470px;touch-action:pan-y}
+.post{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:14px;text-align:left;cursor:grab;user-select:none;-webkit-user-select:none;will-change:transform}
+.post.dragging{cursor:grabbing;transition:none}
+.post.enter{animation:dealin .5s cubic-bezier(.2,.9,.25,1.1)}
+@keyframes dealin{from{transform:translateY(40px) rotate(-3deg) scale(.95)}to{transform:none}}
+.post.fly-r{transition:transform .5s cubic-bezier(.5,0,.75,0),opacity .5s;transform:translateX(130%) rotate(18deg);opacity:0}
+.post.fly-l{transition:transform .5s cubic-bezier(.5,0,.75,0),opacity .5s;transform:translateX(-130%) rotate(-18deg);opacity:0}
+.post-head{display:flex;gap:12px;align-items:center}
+.post-head .who{min-width:0;flex:1}
+.post-head b{display:flex;align-items:center;gap:5px;font-size:1rem;line-height:1.25}
+.post-head small{color:var(--ink-3);font-size:.82rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tick{width:16px;height:16px;flex:none}
+.platform{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);border:1px solid var(--line);border-radius:999px;padding:2px 8px;flex:none}
+.post-text{font-size:1.08rem;line-height:1.5;overflow-wrap:anywhere}
+.post-text .lnk{color:var(--blue);text-decoration:underline}
+.media{border-radius:14px;aspect-ratio:16/9;max-width:100%;position:relative;overflow:hidden;display:grid;place-items:center;color:#fff;font-family:var(--f-display);font-weight:700}
+.media .tag{position:absolute;left:10px;bottom:10px;font-family:var(--f-mono);font-size:.68rem;background:rgba(0,0,0,.55);padding:3px 8px;border-radius:6px;font-weight:500}
+.media .play-ic{width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center}
+.media .play-ic::after{content:"";border-left:20px solid #111;border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:6px}
+.media.glitch::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.06) 0 2px,transparent 2px 4px);animation:scan 3s linear infinite}
+@keyframes scan{to{background-position:0 40px}}
+.sms{background:var(--surface-2);border-radius:18px 18px 18px 4px;padding:14px 16px;font-size:1.02rem;line-height:1.45;overflow-wrap:anywhere}
+.comments{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.cmt{display:flex;gap:8px;align-items:flex-start;font-size:.88rem}
+.cmt .avatar{width:24px;height:24px;font-size:.6rem}
+.cmt b{font-weight:600;margin-right:4px}
+.stats{display:flex;gap:18px;color:var(--ink-3);font-size:.85rem;font-family:var(--f-mono)}
+.post .stamp{left:50%;top:44%;transform:translate(-50%,-50%) rotate(-14deg) scale(2.2);opacity:0;font-size:clamp(1.6rem,6vw,2.4rem)}
+.post.show-t .stamp.t,.post.show-f .stamp.f{animation:slam2 .42s cubic-bezier(.3,1.6,.5,1) forwards}
+@keyframes slam2{0%{opacity:0;transform:translate(-50%,-50%) rotate(-14deg) scale(2.2)}60%{opacity:1;transform:translate(-50%,-50%) rotate(-14deg) scale(.9)}100%{opacity:1;transform:translate(-50%,-50%) rotate(-14deg) scale(1)}}
+.hint-l,.hint-r{position:absolute;top:18px;font-family:var(--f-display);font-weight:800;font-size:1.1rem;text-transform:uppercase;opacity:0;pointer-events:none;border:3px solid currentColor;border-radius:8px;padding:2px 10px}
+.hint-l{right:18px;color:var(--stamp-false);transform:rotate(10deg)}
+.hint-r{left:18px;color:var(--stamp-true);transform:rotate(-10deg)}
+
+.choices{display:flex;gap:12px;width:100%;max-width:470px}
+.choice{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 10px;border-radius:16px;border:2px solid currentColor;background:transparent;cursor:pointer;font-family:var(--f-display);font-weight:800;font-size:1.12rem;letter-spacing:.01em;transition:transform .15s,background .2s}
+.choice:hover{transform:translateY(-2px)}
+.choice:disabled{opacity:.4;cursor:default;transform:none}
+.choice.no{color:var(--stamp-false)} .choice.no:hover:not(:disabled){background:var(--false-soft)}
+.choice.yes{color:var(--stamp-true)} .choice.yes:hover:not(:disabled){background:var(--true-soft)}
+.choice svg{width:22px;height:22px}
+
+.tools{display:flex;flex-direction:column;gap:10px;text-align:left}
+.tools-title{display:flex;justify-content:space-between;align-items:baseline}
+.tool{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--paper);cursor:pointer;transition:border-color .2s,transform .15s}
+.tool:hover:not(:disabled){border-color:var(--blue);transform:translateX(2px)}
+.tool:disabled{cursor:default}
+.tool .ic{width:34px;height:34px;flex:none;border-radius:10px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center}
+.tool .ic svg{width:18px;height:18px}
+.tool b{display:block;font-size:.93rem;line-height:1.25}
+.tool small{color:var(--ink-3);font-size:.78rem}
+.tool .found{display:block;margin-top:6px;font-size:.86rem;color:var(--ink);line-height:1.4}
+.tool.used{border-color:var(--flag);background:var(--flag-soft)}
+.tool.used .ic{background:var(--flag);color:var(--surface)}
+.tools-locked{font-size:.88rem;color:var(--ink-3);border:1px dashed var(--line);border-radius:14px;padding:14px}
+
+.verdict{width:100%;max-width:470px;border-radius:18px;padding:18px 20px;text-align:left;display:flex;flex-direction:column;gap:12px;animation:rise .4s cubic-bezier(.2,.8,.2,1)}
+.verdict.ok{background:var(--true-soft)} .verdict.bad{background:var(--false-soft)}
+.verdict-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.verdict h4{margin:0;font-family:var(--f-display);font-size:1.35rem}
+.verdict.ok h4{color:var(--stamp-true)} .verdict.bad h4{color:var(--stamp-false)}
+.pts{font-family:var(--f-mono);font-weight:700}
+.flags{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.flags li{display:flex;gap:9px;font-size:.93rem;line-height:1.4}
+.flags li::before{content:"";width:9px;height:9px;flex:none;margin-top:6px;border-radius:2px;background:var(--flag);transform:rotate(45deg)}
+.flags.good li::before{background:var(--stamp-true);border-radius:50%;transform:none}
+.verdict .explain{font-size:.95rem;color:var(--ink-2)}
+
+.result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%}
+.res{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:2px}
+.res b{font-family:var(--f-display);font-size:1.9rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.res span{font-size:.8rem;color:var(--ink-3)}
+.rank{display:inline-flex;flex-direction:column;align-items:center;gap:6px}
+.rank-badge{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--blue) var(--p,70%),var(--surface-2) 0);position:relative;animation:pop .6s cubic-bezier(.3,1.5,.5,1)}
+.rank-badge::after{content:"";position:absolute;inset:10px;border-radius:50%;background:var(--surface)}
+.rank-badge span{position:relative;z-index:1;font-family:var(--f-display);font-weight:800;font-size:1.9rem}
+@keyframes pop{from{transform:scale(.5)}to{transform:scale(1)}}
+.review{width:100%;text-align:left;display:flex;flex-direction:column;gap:8px;max-height:280px;overflow:auto;padding-right:4px}
+.review-row{display:flex;gap:10px;align-items:baseline;font-size:.9rem;padding:8px 12px;border-radius:10px;background:var(--paper)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;transform:translateY(1px)}
+.share{display:flex;gap:10px;width:100%;max-width:520px;flex-wrap:wrap;justify-content:center}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,120px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-weight:600;font-size:.92rem;z-index:80;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.toast.on{transform:translate(-50%,0)}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.confetti i{position:absolute;top:-12px;width:8px;height:14px;border-radius:2px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(720px) rotate(720deg)}}
+
+@media (max-width:880px){.play{grid-template-columns:1fr}.tools{order:3}.hero .wrap{grid-template-columns:1fr}.deck{height:360px}}
+@media (max-width:640px){.levels{grid-template-columns:1fr}.result-grid{grid-template-columns:repeat(2,1fr)}.stage{min-height:520px;padding:22px 12px}.desk{border-radius:20px}.hud{padding:12px 14px;gap:8px 16px}}
+
+/* why */
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.why{padding:24px;border-radius:20px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;transition:transform .3s}
+.why:hover{transform:translateY(-4px)}
+.why .tagline{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blue)}
+.why h3{font-size:1.4rem;font-weight:700}
+.why p{color:var(--ink-2);font-size:.97rem}
+.goals{margin-top:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.goal{display:flex;gap:16px;align-items:flex-start;padding:22px;border-radius:20px;background:var(--blue-soft)}
+.goal .num{font-family:var(--f-display);font-weight:800;font-size:2.2rem;line-height:1;color:var(--blue);flex:none}
+.goal h3{font-size:1.15rem;margin-bottom:6px}
+.goal p{font-size:.95rem;color:var(--ink-2)}
+@media (max-width:880px){.why-grid,.goals{grid-template-columns:1fr}}
+
+/* steps */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:2px solid var(--ink)}
+.step{padding:22px 20px 8px 0;display:flex;flex-direction:column;gap:10px;border-right:1px solid var(--line);padding-left:20px}
+.step:first-child{padding-left:0}
+.step:last-child{border-right:0}
+.step .n{font-family:var(--f-mono);font-size:.8rem;color:var(--ink-3)}
+.step h3{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+.step p{color:var(--ink-2);font-size:.95rem}
+@media (max-width:880px){.steps{grid-template-columns:1fr 1fr}.step{border-right:0;padding-left:0;border-bottom:1px solid var(--line);padding-bottom:18px}}
+@media (max-width:520px){.steps{grid-template-columns:1fr}}
+
+/* feedback */
+.fb{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+.fb-form{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:20px}
+.q{display:flex;flex-direction:column;gap:10px;border:0;padding:0;margin:0}
+.q legend,.q label.qt{font-weight:600;padding:0;margin-bottom:2px}
+.scale{display:flex;gap:8px;flex-wrap:wrap}
+.scale input{position:absolute;opacity:0;pointer-events:none}
+.scale label{min-width:46px;height:46px;padding:0 14px;display:grid;place-items:center;border-radius:12px;border:1.5px solid var(--line);cursor:pointer;font-weight:600;transition:all .15s}
+.scale input:checked+label{background:var(--blue);border-color:var(--blue);color:var(--blue-ink);transform:translateY(-2px)}
+.scale input:focus-visible+label{outline:3px solid var(--blue);outline-offset:2px}
+textarea{width:100%;min-height:96px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink);padding:12px;font:inherit;resize:vertical}
+.fb-done{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.fb-side{display:flex;flex-direction:column;gap:16px}
+.fb-side p{color:var(--ink-2)}
+@media (max-width:880px){.fb{grid-template-columns:1fr}}
+
+/* about */
+.about{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.about-box{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:26px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.about-box h3{font-size:1.35rem}
+.about-box ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;color:var(--ink-2);font-size:.95rem}
+.team{display:flex;flex-wrap:wrap;gap:10px}
+.member{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;border-radius:999px;background:var(--surface-2);font-weight:600;font-size:.92rem}
+.member .avatar{width:30px;height:30px;font-size:.75rem}
+@media (max-width:880px){.about{grid-template-columns:1fr}}
+
+footer{padding-block:36px;border-top:1px solid var(--line);color:var(--ink-3);font-size:.88rem}
+footer a{color:var(--ink-2)}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body style="margin:0">
+
+<nav class="nav" aria-label="Peamenüü">
+  <div class="wrap">
+    <a class="logo" href="#top"><span class="logo-mark" aria-hidden="true"></span>Tõejaht</a>
+    <div class="nav-links">
+      <a href="#mang">Mängi</a>
+      <a href="#miks">Miks?</a>
+      <a href="#sammud">4 sammu</a>
+      <a href="#tagasiside">Tagasiside</a>
+      <a href="#projekt">Projektist</a>
+    </div>
+    <button class="theme-btn" id="themeBtn" type="button" aria-label="Vaheta heledat ja tumedat vaadet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="eyebrow">Õppemäng · meediakirjaoskus · kodanikualgatus</span>
+      <h1>Kas sa tunned <span class="strike">vale</span> <em>ära?</em></h1>
+      <p class="hero-lead">Tõejaht paneb sind faktikontrollija rolli. Sinu ette jõuavad postitused, sõnumid ja videod, mis levivad ka päriselt. Otsusta, kas neid võib usaldada, enne kui aeg otsa saab, ja õpi märkama manipuleerimise võtteid.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#mang" id="heroPlay">Alusta mängu
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn btn-ghost" href="#miks">Miks see oluline on?</a>
+      </div>
+      <div class="hero-meta">
+        <div><b>18</b><span>juhtumit</span></div>
+        <div><b>3</b><span>raskusastet</span></div>
+        <div><b>~7 min</b><span>mänguaeg</span></div>
+      </div>
+    </div>
+    <div class="deck" id="deck" aria-hidden="true"></div>
+  </div>
+</header>
+
+<section class="band" id="mang" style="padding-top:20px">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Mäng</span>
+      <h2>Tõejahi büroo</h2>
+      <p>Lohista kaart paremale, kui usaldad seda, ja vasakule, kui ei usalda. Võid kasutada ka nuppe või klaviatuuri nooleklahve.</p>
+    </div>
+    <div class="desk" id="desk">
+      <div class="hud" id="hud">
+        <div class="hud-item"><span class="eyebrow">Tase</span><b id="hudLevel">–</b></div>
+        <div class="hud-item"><span class="eyebrow">Juhtum</span><b id="hudCase">0/18</b></div>
+        <div class="hud-item"><span class="eyebrow">Punktid</span><b id="hudScore">0</b></div>
+        <div class="hud-item"><span class="eyebrow">Usaldus</span><div class="lives" id="lives"></div></div>
+        <span class="combo" id="combo">×1</span>
+      </div>
+      <div class="timer" id="timer"><i id="timerBar"></i></div>
+      <div class="stage" id="stage"></div>
+      <div class="confetti" id="confetti"></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="miks">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Probleem</span>
+      <h2>Väärinfo levib kiiremini kui parandus</h2>
+      <p>Eesti on digiriik: suur osa meie elust käib ekraanil. See teeb meid ka haavatavaks. Valeuudised, petusõnumid ja võltsvideod mõjutavad seda, keda me usaldame, kuidas hääletame ja kas meie raha jääb alles.</p>
+    </div>
+    <div class="why-grid">
+      <article class="why">
+        <span class="tagline">Petused</span>
+        <h3>Petusõnumid ja õngitsus</h3>
+        <p>Libapakiteavitused, „riigitoetused“ ja võltspankade lehed püüavad kätte saada paroole ja kaardiandmeid. Kõige sagedamini langevad ohvriks kiirustavad inimesed.</p>
+      </article>
+      <article class="why">
+        <span class="tagline">Mõjutustegevus</span>
+        <h3>Infooperatsioonid</h3>
+        <p>Eesti on sihtmärk vaenulikele mõjutuskampaaniatele, mis külvavad umbusku riigi, meedia ja teineteise vastu. Sidus ühiskond on nende vastu parim kaitse.</p>
+      </article>
+      <article class="why">
+        <span class="tagline">Tehisaru</span>
+        <h3>Võltsvideod ja -pildid</h3>
+        <p>Tehisaruga loodud hääl ja pilt on üha veenvamad. Allika kontrollimine ja teiste kanalite võrdlemine on oskused, mida vajab iga noor ja täiskasvanu.</p>
+      </article>
+    </div>
+    <div class="goals">
+      <div class="goal"><span class="num">35</span><div><h3>Eesti 2035</h3><p>Strateegia seab eesmärgiks sidusa ja hooliva ühiskonna ning inimesed, kes oskavad end digimaailmas kaitsta. Tõejaht treenib just neid oskusi.</p></div></div>
+      <div class="goal"><span class="num">4·16</span><div><h3>ÜRO kestliku arengu eesmärgid</h3><p>KAE 4 (kvaliteetne haridus, eriti 4.7 aktiivne kodanikuks olemine) ja KAE 16 (rahu, õiglus ja tugevad institutsioonid, 16.10 avalik ligipääs teabele).</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="sammud" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Meelespea</span>
+      <h2>Neli sammu enne jagamist</h2>
+      <p>Faktikontrollijate tööviis, mida saab kasutada iga kord, kui midagi tundub liiga šokeeriv, et olla tõsi.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="n">1. samm</span><h3>Peatu</h3><p>Kui postitus tekitab tugeva emotsiooni või kiirustab sind, võta hetk. Manipuleerija tahab, et sa jagaksid enne mõtlemist.</p></div>
+      <div class="step"><span class="n">2. samm</span><h3>Uuri allikat</h3><p>Kes selle avaldas? Vaata kontot, veebiaadressi ja seda, kas allikas on varem usaldusväärne olnud.</p></div>
+      <div class="step"><span class="n">3. samm</span><h3>Otsi kinnitust</h3><p>Kas sama infot kajastavad ka teised usaldusväärsed väljaanded või ametlikud asutused?</p></div>
+      <div class="step"><span class="n">4. samm</span><h3>Leia algallikas</h3><p>Otsi üles algne uuring, tsitaat või foto. Pildi pöördotsing näitab, kus ja millal pilt esimest korda ilmus.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="tagasiside" style="padding-top:0">
+  <div class="wrap fb">
+    <div class="fb-side">
+      <div class="sec-head" style="margin-bottom:0">
+        <span class="eyebrow">Tagasiside</span>
+        <h2>Kuidas mäng sulle meeldis?</h2>
+        <p>Sinu vastus aitab meil mängu paremaks teha ja mõõta, kas mäng õpetab midagi uut.</p>
+      </div>
+    </div>
+    <div class="fb-form">
+      <span class="eyebrow">Küsimustik · alla 1 minuti</span>
+      <h3 style="font-size:1.5rem;margin:0">Vasta kolmele lühikesele küsimusele</h3>
+      <p style="color:var(--ink-2);margin:0">Küsimustik avaneb Google Formsis uues aknas. Vastused on anonüümsed ja aitavad meil mõõta, kas mäng õpetab midagi uut.</p>
+      <a class="btn btn-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSdXEMV1v8E3T9iNzZA3D1NZCF5qFLU42CFnmGy8exlBFhGR3Q/viewform" target="_blank" rel="noopener" style="align-self:flex-start">Ava küsimustik
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="projekt" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Projektist</span>
+      <h2>Noorte kodanikualgatus</h2>
+      <p>Tõejaht on kodanikuühiskonna projekti raames loodud õppemäng. Eesmärk on aidata noortel ja nende peredel väärinfot ära tunda ning seeläbi tugevdada usaldust ja turvalisust Eesti ühiskonnas.</p>
+    </div>
+    <div class="about">
+      <div class="about-box">
+        <h3>Tegijad</h3>
+        <div class="team">
+          <span class="member"><span class="avatar" style="background:#1F5FD6">VL</span>Vladislav Lustik</span>
+          <span class="member"><span class="avatar" style="background:#178A5E">MS</span>Mirko Siimon</span>
+        </div>
+        <h3 style="margin-top:8px">Kuidas mõju mõõdame</h3>
+        <ul>
+          <li>Mängijate arv ja läbitud mängude tulemused (õigete vastuste osakaal).</li>
+          <li>Tagasiside küsitlus: kui palju mängijad õppisid ja kas soovitaksid mängu.</li>
+          <li>Võrdlus esimese ja kolmanda taseme tulemuste vahel.</li>
+        </ul>
+      </div>
+      <div class="about-box">
+        <h3>Kasutatud allikad</h3>
+        <ul>
+          <li>Riigikantselei. Eesti 2035 arengustrateegia. <a href="https://valitsus.ee/strateegia-eesti-2035-arengukavad-ja-planeering/strateegia" target="_blank" rel="noopener">valitsus.ee</a></li>
+          <li>ÜRO kestliku arengu eesmärgid. <a href="https://sdgs.un.org/goals" target="_blank" rel="noopener">sdgs.un.org</a></li>
+          <li>Riigi Infosüsteemi Amet (CERT-EE). Küberturvalisuse nõuanded. <a href="https://www.ria.ee" target="_blank" rel="noopener">ria.ee</a></li>
+          <li>Propastop. Eesti blogi propaganda ja väärinfo kohta. <a href="https://www.propastop.org" target="_blank" rel="noopener">propastop.org</a></li>
+          <li>Valimisteenistus. E-hääletuse ajalugu. <a href="https://www.valimised.ee" target="_blank" rel="noopener">valimised.ee</a></li>
+        </ul>
+        <p style="font-size:.85rem;color:var(--ink-3)">Mängu postitused on väljamõeldud näited. Kontod, veebiaadressid ja videod on loodud õppe eesmärgil.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Tõejaht · kodanikuühiskonna projekt · 2026 · Vladislav Lustik, Mirko Siimon</span>
+    <span>Peatu. Uuri. Kontrolli. Alles siis jaga.</span>
+    <span style="flex-basis:100%">Sisu litsents: <a href="https://creativecommons.org/licenses/by/4.0/deed.et" target="_blank" rel="noopener license">CC BY 4.0</a> – võid mängu vabalt kasutada ja jagada, viidates autoritele. Tagasiside ja küsimused: <a href="https://docs.google.com/forms/d/e/1FAIpQLSdXEMV1v8E3T9iNzZA3D1NZCF5qFLU42CFnmGy8exlBFhGR3Q/viewform" target="_blank" rel="noopener">küsimustiku kaudu</a>.</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- theme ---------- */
+const root=document.documentElement;
+const savedTheme=store.get("tj-theme",null);
+if(savedTheme)root.setAttribute("data-theme",savedTheme);
+$("#themeBtn").addEventListener("click",()=>{
+  const cur=root.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  const next=cur==="dark"?"light":"dark";root.setAttribute("data-theme",next);store.set("tj-theme",next);
+});
+
+/* ---------- icons ---------- */
+const ICON={
+  source:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  context:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  confirm:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h10M7 17h6"/></svg>',
+  yes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
+  no:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  tick:'<svg class="tick" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="var(--blue)"/><path d="M7 12.5l3.2 3L17 9" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+
+/* ---------- data ---------- */
+const LEVELS=[
+  {name:"Algaja",time:25,tools:false,desc:"Selged ohumärgid. Õpi tundma tüüpilisi võtteid."},
+  {name:"Uurija",time:20,tools:true,desc:"Kasuta uurimistööriistu: iga vihje maksab 30 punkti."},
+  {name:"Faktikontrollija",time:15,tools:true,desc:"Võltsvideod, satiir ja robotkontod. Aega on vähem."}
+];
+const C=(o)=>o;
+const CASES=[
+ // ---- tase 1
+ [
+  C({type:"post",platform:"Sotsiaalmeedia",author:"Uudised Kohe 24",handle:"@uudisedkohe24_ee · 2 min",color:"#E0533D",
+    text:"ŠOKK!!! Alates homsest lülitatakse KÕIK pangakaardid välja! Võta raha KOHE automaadist välja ja jaga seda postitust enne, kui see kustutatakse!!!",
+    stats:["12,4 tuh jagamist","3,1 tuh kommentaari"],truth:false,
+    flags:["Hirmutav ja kiirustav toon ning palju hüüumärke","Allikat ega ametlikku teadet pole","„Jaga enne, kui kustutatakse“ on klassikaline levitamise võte","Tundmatu, kinnitamata konto"],
+    explain:"Pangad teavitavad suurtest muudatustest oma ametlikes kanalites ja aegsasti. Paanikat külvav postitus tahab, et jagaksid enne mõtlemist."}),
+  C({type:"post",platform:"Ametlik leht",author:"Valimisteenistus",handle:"valimised.ee · 3 päeva tagasi",color:"#1F5FD6",verified:true,
+    text:"Teadsid sa? Eestis saab valimistel hääletada interneti teel. E-hääletus võeti kasutusele 2005. aasta kohalike omavalitsuste volikogude valimistel.",
+    stats:["842 meeldimist","96 jagamist"],truth:true,
+    flags:["Ametlik ja kinnitatud allikas","Rahulik, faktipõhine toon","Infot saab kontrollida ka teistest allikatest"],
+    explain:"See on tõsi. Eesti oli esimene riik maailmas, kus kogu riigis sai siduvatel valimistel hääletada interneti teel."}),
+  C({type:"sms",platform:"SMS",author:"PAKK-INFO",handle:"Tundmatu saatja · 09:14",color:"#7A5AF8",
+    text:'Teie pakk on ootel. Tasuge 1,99 € tollitasu 24 h jooksul, muidu pakk tagastatakse: <span class="lnk">pakiautomaat-ee.info/maksa</span>',
+    truth:false,
+    flags:["Kummaline veebiaadress, mis jäljendab päris teenust","Ajasurve: „24 h jooksul“","Väike summa meelitab sisestama kaardiandmeid"],
+    explain:"Petturid saadavad selliseid sõnumeid tuhandetele korraga. Kontrolli pakki alati kulleri ametlikus äpis ja teavita kahtlastest sõnumitest CERT-EE-d (Riigi Infosüsteemi Amet)."}),
+  C({type:"post",platform:"Ametlik leht",author:"Häirekeskus",handle:"112.ee · eile",color:"#D23B3B",verified:true,
+    text:"112 on üleeuroopaline hädaabinumber. Samale numbrile saad helistada igas Euroopa Liidu riigis: nii Eestis kui ka reisil olles.",
+    stats:["2,3 tuh meeldimist","610 jagamist"],truth:true,
+    flags:["Ametlik asutus, kelle töö see teema on","Info on lihtsalt kontrollitav","Ei küsi midagi vastu ega kiirusta"],
+    explain:"See on tõsi. Number 112 töötab kõigis ELi liikmesriikides."}),
+  C({type:"post",platform:"Sotsiaalmeedia",author:"Tervisetarkus Looduselt",handle:"@terviselt.loodus · 1 h",color:"#2E9E5B",
+    text:"Arstid VAIKIVAD selle kohta! Sidrunivesi tühja kõhuga ravib gripi 24 tunniga. Apteegid ei taha, et sa seda teaksid 🍋",
+    media:{bg:"linear-gradient(135deg,#F7D046,#8BC34A)",label:"🍋",tag:"foto"},
+    stats:["8,9 tuh meeldimist","4,2 tuh jagamist"],truth:false,
+    flags:["„Arstid vaikivad“ on vandenõu-võte, mis õõnestab usaldust","Imeravi lubadus ilma ühegi uuringuta","Konto müüb tõenäoliselt ise tooteid"],
+    explain:"Grippi ei ravi ükski jook 24 tunniga. Terviseinfot kontrolli perearsti, apteekri või Terviseameti kaudu."}),
+  C({type:"post",platform:"Haridusportaal",author:"Ajalootund",handle:"@ajalootund · 5 päeva tagasi",color:"#0E7490",verified:true,
+    text:"Eesti ühines 2004. aastal nii NATO kui ka Euroopa Liiduga: NATOga 29. märtsil ja Euroopa Liiduga 1. mail.",
+    stats:["1,1 tuh meeldimist"],truth:true,
+    flags:["Konkreetsed kuupäevad, mida saab kontrollida","Sama infot kinnitavad õpikud ja ametlikud lehed","Neutraalne toon"],
+    explain:"See on tõsi. 2004. aasta oli Eesti välispoliitikas murranguline."})
+ ],
+ // ---- tase 2
+ [
+  C({type:"post",platform:"Sotsiaalmeedia",author:"Tallinna Linnauudised",handle:"@tln_linnauudised_ · 25 min",color:"#3B82F6",
+    text:"Täna hommikul Tallinnas: Vabaduse väljak on täielikult vee all! 🌊 Linnavalitsus vaikib!",
+    media:{bg:"linear-gradient(160deg,#5B7FA6,#1E3A5F 70%)",label:"🌊",tag:"foto · 4032×3024"},
+    stats:["5,6 tuh jagamist"],truth:false,
+    clues:{source:"Konto loodi kolm päeva tagasi ja on avaldanud ainult šokeerivaid pilte.",context:"Pildi pöördotsing näitab, et foto tehti 2017. aastal hoopis teises riigis.",confirm:"Ükski uudisteportaal ega Päästeamet üleujutusest ei teata."},
+    flags:["Vana foto on pandud uude konteksti","Värske ja nimelt sarnane libakonto","Kinnitust ei leidu kusagilt mujalt"],
+    explain:"Vanade piltide uus kasutamine on üks levinumaid väärinfo vorme. Pildi pöördotsing aitab algse allika üles leida."}),
+  C({type:"post",platform:"Ametlik leht",author:"Keskkonnaamet",handle:"keskkonnaamet.ee · 1 nädal",color:"#178A5E",verified:true,
+    text:"Lahemaa on Eesti vanim rahvuspark. See loodi 1971. aastal ja on tänaseni üks Eesti armastatumaid matkapiirkondi.",
+    media:{bg:"linear-gradient(170deg,#9BC5A3,#2F6B4F)",label:"🌲",tag:"foto"},
+    stats:["3,4 tuh meeldimist"],truth:true,
+    clues:{source:"Kinnitatud ametlik konto, mis haldab Eesti kaitsealasid.",context:"Foto on asutuse enda pildipangast.",confirm:"Sama aastaarvu toovad entsüklopeediad ja rahvuspargi koduleht."},
+    flags:["Asutus räägib oma valdkonnast","Fakt on mitmest allikast kinnitatav"],
+    explain:"See on tõsi. Lahemaa rahvuspark loodi 1971. aastal."}),
+  C({type:"post",platform:"Reklaam",author:"Eesti Noortetoetus",handle:"Sponsitud · eesti-toetus.com",color:"#F59E0B",
+    text:'Riik maksab igale 16–25-aastasele noorele 500 € toetust! Täida vorm ja sisesta oma internetipanga kasutajanimi ja parool: <span class="lnk">eesti-toetus.com/vorm</span>',
+    stats:["Sponsitud postitus"],truth:false,
+    clues:{source:"Riigiasutuste lehed asuvad .ee aadressil. See leht on registreeritud välismaal kaks nädalat tagasi.",context:"Riik ega pank ei küsi kunagi sinu paroole ega PIN-koode.",confirm:"Riigiportaalis eesti.ee sellist toetust ei ole."},
+    flags:["Liiga hea pakkumine, et olla tõsi","Küsib paroole, mida keegi ei tohi küsida","Võõras veebiaadress, mis jäljendab riiki"],
+    explain:"See on õngitsus. Kui oled juba andmed sisestanud, võta kohe ühendust oma pangaga ja vaheta paroolid."}),
+  C({type:"post",platform:"Sotsiaalmeedia",author:"Rahva Hääl Kuuldavaks",handle:"@rahvahaal_ee · 3 h",color:"#9333EA",
+    text:"UURING: 90% eestlastest ei usalda enam arste! Aeg on ärgata!",
+    stats:["2,8 tuh jagamist","940 kommentaari"],truth:false,
+    clues:{source:"Konto jagab ainult ühe kindla vaate postitusi.",context:"„Uuring“ oli Facebooki grupi küsitlus, millele vastas 40 inimest.",confirm:"Päris arvamusuuringud näitavad hoopis teistsugust pilti."},
+    flags:["Number ilma uuringu viiteta","Väike ja kallutatud valim esitatakse kogu rahva arvamusena","Üleskutse „ärgata“ mängib emotsioonidele"],
+    explain:"Statistikaga manipuleerimisel küsi alati: kes uuris, kui paljudelt ja kuidas. Usaldusväärne uuring avaldab oma metoodika."}),
+  C({type:"post",platform:"Muuseum",author:"Eesti Lipu Selts",handle:"@eestilipp · 4. juuni",color:"#1F5FD6",verified:true,
+    text:"Täna on lipupäev! Sinimustvalge lipp pühitseti 4. juunil 1884 Otepää kirikus. Sellest sai rahvusliku ärkamise sümbol.",
+    media:{bg:"linear-gradient(180deg,#0072CE 0 33.3%,#111 33.3% 66.6%,#fff 66.6%)",label:"",tag:"illustratsioon"},
+    stats:["6,1 tuh meeldimist"],truth:true,
+    clues:{source:"Organisatsioon, mis tegeleb lipu ajaloo hoidmisega.",context:"Postitus on tehtud lipupäeval, mis on tähtpäev igal aastal.",confirm:"Kuupäeva kinnitavad ajalooõpikud ja Eesti Rahva Muuseum."},
+    flags:["Täpne ja kontrollitav ajalooline fakt","Allikas on teemaga otseselt seotud"],
+    explain:"See on tõsi. Sinimustvalge lipp pühitseti 4. juunil 1884 Otepääl."}),
+  C({type:"post",platform:"Uudisportaal",author:"Tehnikauudised",handle:"@tehnikauudised · 2 päeva",color:"#0F766E",verified:true,
+    text:"Kas teadsid, et Skype'i tehnilise lahenduse lõid Eesti insenerid? Programm avaldati 2003. aastal ja sellest sai maailmakuulus.",
+    stats:["1,9 tuh meeldimist"],truth:true,
+    clues:{source:"Tehnoloogiale keskendunud väljaanne, millel on toimetus ja kontaktid.",context:"Tegemist on üldtuntud faktiga, mitte värske uudisega.",confirm:"Sama kinnitavad mitmed rahvusvahelised ja Eesti allikad."},
+    flags:["Üllatav, aga kinnitatud fakt","Mitu sõltumatut allikat ütlevad sama"],
+    explain:"See on tõsi. Üllatav ei tähenda alati vale: seepärast tasub kontrollida, mitte arvata."})
+ ],
+ // ---- tase 3
+ [
+  C({type:"video",platform:"Videokanal",author:"Päeva Paljastus",handle:"@paevapaljastus · 40 min",color:"#DC2626",
+    text:"VIDEO: Haridusminister teatas, et alates järgmisest õppeaastast kaotatakse koolivaheajad!",
+    media:{bg:"linear-gradient(135deg,#334155,#0F172A)",video:true,tag:"0:38 · 210 tuh vaatamist"},
+    stats:["18 tuh jagamist"],truth:false,
+    clues:{source:"Kanal on avaldanud mitu tehisaruga loodud videot.",context:"Huulte liikumine ei klapi häälega ja näo servad virvendavad: tunnused, mis viitavad võltsvideole.",confirm:"Ministeeriumi kodulehel ja uudistes sellist teadet pole."},
+    flags:["Tehisaruga loodud võltsvideo (deepfake)","Teade levib ainult ühes kanalis","Nii suur otsus jõuaks kõigisse uudistesse"],
+    explain:"Võltsvideoid on üha raskem silmaga ära tunda. Kõige kindlam on kontrollida, kas sama ütlevad ka ametlikud kanalid."}),
+  C({type:"post",platform:"Huumorileht",author:"Nupukas Uudis",handle:"nupukasuudis.ee · 1 päev",color:"#EA580C",
+    text:"Eesti ehitab oma esimese kuujaama: ehitus algab Saaremaal ja valmib enne Rail Balticut!",
+    media:{bg:"radial-gradient(circle at 70% 30%,#F8FAFC 0 18%,#1E293B 19%)",label:"",tag:"illustratsioon"},
+    stats:["9,7 tuh jagamist"],truth:false,
+    clues:{source:"Lehe kirjelduses on kirjas: „Huumor ja satiir. Kõik lood on väljamõeldud.“",context:"Lugu on avaldatud rubriigis „Nali“.",confirm:"Ükski teadusasutus ega uudisteportaal seda ei kajasta."},
+    flags:["Satiir, mida jagatakse päris uudisena","Allika kirjeldust tasub alati lugeda"],
+    explain:"Satiir ise ei ole halb, aga kui seda jagatakse ilma kontekstita, muutub see väärinfoks. Seda ei saa usaldada kui uudist."}),
+  C({type:"post",platform:"Sotsiaalmeedia",author:"Tõde Eestist",handle:"@tode_eestist_ · 2 h",color:"#64748B",
+    text:"Elektri hind tõuseb homsest 10 korda ja valitsus varjab seda! Jaga kõigile!",
+    comments:[["kasutaja84721","Täpselt nii! Kõik on valetanud!"],["kasutaja84722","Täpselt nii! Kõik on valetanud!"],["eesti_patriot_1993","Täpselt nii!! Kõik on valetanud!"],["user_55901","Täpselt nii! Kõik on valetanud!"]],
+    truth:false,
+    clues:{source:"Kommenteerijate kontod on loodud samal päeval ja neil pole profiilipilti.",context:"Ühesugused kommentaarid järjestikustelt kontodelt on robotivõrgustiku tunnus.",confirm:"Elektribörsi hinnad on avalikud ja sellist hüpet ei ole ette näha."},
+    flags:["Robotkontode kommentaarid loovad näilise toetuse","Väide „valitsus varjab“ külvab umbusku","Hinnainfo on avalik ja kontrollitav"],
+    explain:"Kui paljud „inimesed“ kirjutavad sama lause, on need tõenäoliselt robotid. Nende eesmärk on jätta mulje, et kõik arvavad nii."}),
+  C({type:"post",platform:"Ametlik leht",author:"Riigi Infosüsteemi Amet",handle:"ria.ee · 6 h",color:"#1F5FD6",verified:true,
+    text:"Meeldetuletus: pank ega riigiasutus ei küsi sinult kunagi PIN-koode e-kirja, sõnumi ega telefonikõne teel. Kui keegi küsib, katkesta suhtlus.",
+    stats:["4,4 tuh jagamist"],truth:true,
+    clues:{source:"Kinnitatud konto, mis vastutab Eesti küberturvalisuse eest.",context:"Sama hoiatust korratakse regulaarselt.",confirm:"Sama nõuannet jagavad kõik suuremad pangad."},
+    flags:["Ei küsi sinult midagi, vaid hoiatab","Pädev ja ametlik allikas"],
+    explain:"See on tõsi ja see on üks olulisemaid reegleid internetis."}),
+  C({type:"post",platform:"Sotsiaalmeedia",author:"Tarkuse Tsitaadid",handle:"@tarkusetsitaadid · 1 päev",color:"#A855F7",
+    text:"„Internetis loetud tsitaate ei tasu uskuda.“ – Albert Einstein",
+    media:{bg:"linear-gradient(135deg,#312E81,#7C3AED)",label:"„ … “",tag:"pilt"},
+    stats:["22 tuh meeldimist"],truth:false,
+    clues:{source:"Konto postitab pilte, millel on tuntud inimeste nimed ilma viideteta.",context:"Einstein suri 1955. aastal, kaua enne interneti tekkimist.",confirm:"Tsitaati ei leidu üheski Einsteini tekstis."},
+    flags:["Tsitaat on omistatud tuntud inimesele ilma viiteta","Ajaloolist konteksti arvestades võimatu"],
+    explain:"Võltstsitaadid kasutavad kuulsa inimese autoriteeti. Otsi alati, kus ja millal tsitaat algselt ilmus."}),
+  C({type:"post",platform:"Ametlik leht",author:"Riigikantselei",handle:"valitsus.ee · 2 päeva",color:"#0E7490",verified:true,
+    text:"Eesti 2035 on Eesti pikaajaline arengustrateegia, mille Riigikogu kiitis heaks 2021. aastal. Selle eesmärk on teha Eesti heaks paigaks elamiseks, õppimiseks ja töötamiseks.",
+    stats:["730 meeldimist"],truth:true,
+    clues:{source:"Kinnitatud ametlik konto, mis koordineerib strateegiat.",context:"Strateegia dokument on avalikult kättesaadav.",confirm:"Riigikogu otsus ja dokument on avaldatud ametlikult."},
+    flags:["Allikas on dokumendi koostaja","Kõik väited on dokumendiga kontrollitavad"],
+    explain:"See on tõsi. Eesti 2035 kiideti Riigikogus heaks 2021. aasta mais."})
+ ]
+];
+const TOTAL=CASES.reduce((a,l)=>a+l.length,0);
+
+/* ---------- hero deck ---------- */
+const deckData=[
+  {a:"Uudised Kohe 24",h:"@uudisedkohe24_ee",c:"#E0533D",t:"ŠOKK!!! Jaga enne, kui see kustutatakse!",s:"f",l:"Vale"},
+  {a:"Häirekeskus",h:"112.ee",c:"#D23B3B",t:"112 töötab igas Euroopa Liidu riigis.",s:"t",l:"Tõde"},
+  {a:"PAKK-INFO",h:"Tundmatu saatja",c:"#7A5AF8",t:"Tasuge 1,99 € tollitasu: pakiautomaat-ee.info",s:"f",l:"Pettus"},
+  {a:"Keskkonnaamet",h:"keskkonnaamet.ee",c:"#178A5E",t:"Lahemaa on Eesti vanim rahvuspark.",s:"t",l:"Tõde"}
+];
+const deck=$("#deck");
+const minis=deckData.map(d=>{const el=document.createElement("div");el.className="mini";
+  el.innerHTML=`<div class="mini-head"><span class="avatar" style="background:${d.c}">${d.a[0]}</span><div><b>${d.a}</b><small>${d.h}</small></div></div><p>${d.t}</p><div class="bar" style="width:70%"></div><div class="bar" style="width:45%"></div><span class="stamp ${d.s}">${d.l}</span>`;
+  deck.appendChild(el);return el;});
+let deckI=0;
+function layoutDeck(){minis.forEach((el,i)=>{const pos=(i-deckI+minis.length)%minis.length;
+  const off=[[0,0,-3],[26,30,4],[-24,58,-8],[0,84,2]][pos];
+  el.style.transform=`translate(calc(-50% + ${off[0]}px),calc(-62% + ${off[1]}px)) rotate(${off[2]}deg) scale(${1-pos*.05})`;
+  el.style.zIndex=10-pos;el.style.opacity=pos===3?.55:1;});}
+layoutDeck();
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+function deckTick(){const top=minis[deckI];top.classList.add("stamped");
+  setTimeout(()=>{top.style.transform+=` translateX(${deckData[deckI].s==="t"?160:-160}px) rotate(${deckData[deckI].s==="t"?14:-14}deg)`;top.style.opacity=0;},900);
+  setTimeout(()=>{top.classList.remove("stamped");deckI=(deckI+1)%minis.length;layoutDeck();},1500);}
+if(!reduce)setInterval(()=>{if(!document.hidden)deckTick()},3000);
+
+/* ---------- game state ---------- */
+const stage=$("#stage"),timerBar=$("#timerBar"),timerEl=$("#timer");
+let S=null,timerRAF=0,locked=false;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+function newGame(){S={level:0,idx:0,score:0,lives:3,streak:0,best:0,correct:0,answered:0,clues:0,log:[],queue:shuffle(CASES[0]),done:0,lvlCorrect:[0,0,0]};renderHud();}
+function renderHud(){
+  $("#hudLevel").textContent=S?LEVELS[S.level].name:"–";
+  $("#hudCase").textContent=(S?S.done:0)+"/"+TOTAL;
+  $("#hudScore").textContent=S?S.score:0;
+  const L=$("#lives");L.innerHTML="";for(let i=0;i<3;i++){const d=document.createElement("span");d.className="life"+(S&&i>=S.lives?" lost":"");L.appendChild(d)}
+  const m=S?mult():1;const c=$("#combo");c.textContent="Seeria ×"+m.toFixed(2).replace(/\.?0+$/,"");c.classList.toggle("on",!!S&&S.streak>=2);
+}
+function mult(){return Math.min(2,1+0.25*Math.max(0,S.streak-1))}
+function setTimer(frac){timerBar.style.transform=`scaleX(${Math.max(0,frac)})`;timerEl.classList.toggle("low",frac<.3&&frac>0)}
+setTimer(1);
+
+/* ---------- screens ---------- */
+function startScreen(){
+  S=null;renderHud();setTimer(1);stopTimer();
+  const best=store.get("tj-best",0),plays=store.get("tj-plays",0);
+  stage.innerHTML=`<div class="screen">
+    <span class="eyebrow">Toimik avatud</span>
+    <h3>Sinu ülesanne: leia vale üles</h3>
+    <p class="lead">Ees ootab ${TOTAL} juhtumit kolmel tasemel. Iga õige otsus annab punkte ja kiirus annab boonust. Järjestikused õiged vastused kasvatavad seeriakordajat. Kolm viga ja mäng on läbi.</p>
+    <div class="levels">${LEVELS.map((l,i)=>`<div class="lvl"><span class="eyebrow">${i+1}. tase · ${l.time} s</span><b>${l.name}</b><span>${l.desc}</span></div>`).join("")}</div>
+    <button class="btn btn-primary" id="go" type="button">Alusta tõejahti</button>
+    <p class="keys"><kbd>←</kbd> ei usalda &nbsp; <kbd>→</kbd> usaldan &nbsp; <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> vihjed${best?` &nbsp;·&nbsp; Sinu parim tulemus: <b>${best}</b>`:""}${plays?` · mänge: ${plays}`:""}</p>
+  </div>`;
+  $("#go").onclick=()=>{newGame();levelIntro();};
+}
+function levelIntro(){
+  const l=LEVELS[S.level];renderHud();setTimer(1);
+  stage.innerHTML=`<div class="screen">
+    <span class="eyebrow">${S.level+1}. tase</span>
+    <h3>${l.name}</h3>
+    <p class="lead">${l.desc} Igale juhtumile on aega ${l.time} sekundit.</p>
+    <button class="btn btn-primary" id="go" type="button">Ava esimene juhtum</button>
+  </div>`;
+  $("#go").onclick=nextCase;$("#go").focus({preventScroll:true});
+}
+function avatar(c,name){return `<span class="avatar" style="background:${c}">${name.replace(/[^A-Za-zÕÄÖÜŠŽõäöüšž]/g,"")[0]||"?"}</span>`}
+function postHTML(k){
+  let body=`<div class="post-head">${avatar(k.color,k.author)}<div class="who"><b>${k.author}${k.verified?ICON.tick:""}</b><small>${k.handle}</small></div><span class="platform">${k.platform}</span></div>`;
+  if(k.type==="sms")body+=`<div class="sms">${k.text}</div>`;else body+=`<p class="post-text">${k.text}</p>`;
+  if(k.media){const m=k.media;body+=`<div class="media${m.video?" glitch":""}" style="background:${m.bg}">${m.video?'<span class="play-ic"></span>':`<span style="font-size:3rem">${m.label||""}</span>`}<span class="tag">${m.tag}</span></div>`}
+  if(k.comments)body+=`<div class="comments">${k.comments.map(c=>`<div class="cmt"><span class="avatar" style="background:#94A3B8">?</span><span><b>${c[0]}</b>${c[1]}</span></div>`).join("")}</div>`;
+  if(k.stats)body+=`<div class="stats">${k.stats.map(s=>`<span>${s}</span>`).join("")}</div>`;
+  body+=`<span class="hint-r">Usaldan</span><span class="hint-l">Ei usalda</span><span class="stamp t">Tõde</span><span class="stamp f">Väärinfo</span>`;
+  return body;
+}
+function nextCase(){
+  if(S.idx>=S.queue.length){return levelEnd()}
+  const k=S.queue[S.idx],l=LEVELS[S.level];S.cur=k;S.used={};locked=false;renderHud();
+  const tools=l.tools?`<div class="tools"><div class="tools-title"><span class="eyebrow">Uurimistööriistad</span><span class="eyebrow">−30 p</span></div>
+      ${[["source","Kontrolli allikat","Kes selle avaldas?"],["context","Uuri konteksti","Pilt, aeg ja taust"],["confirm","Otsi kinnitust","Mida ütlevad teised?"]].map((t,i)=>`<button class="tool" type="button" data-tool="${t[0]}"><span class="ic">${ICON[t[0]]}</span><span><b>${i+1}. ${t[1]}</b><small>${t[2]}</small><span class="found" hidden></span></span></button>`).join("")}
+    </div>`:`<div class="tools"><span class="eyebrow">Uurimistööriistad</span><div class="tools-locked">Avanevad 2. tasemel. Praegu usalda oma silma: vaata allikat, tooni ja seda, mida sinult tahetakse.</div></div>`;
+  stage.innerHTML=`<div class="play">
+    <div class="play-main">
+      <span class="case-no">TOIMIK NR ${String(S.done+1).padStart(3,"0")} · ${l.name.toUpperCase()}</span>
+      <div class="card-zone"><article class="post enter" id="post" aria-live="polite">${postHTML(k)}</article></div>
+      <div class="choices" id="choices">
+        <button class="choice no" type="button" id="bNo">${ICON.no}Ei usalda</button>
+        <button class="choice yes" type="button" id="bYes">${ICON.yes}Usaldan</button>
+      </div>
+      <div id="verdictSlot" style="width:100%;display:flex;justify-content:center"></div>
+    </div>
+    ${tools}
+  </div>`;
+  $("#bNo").onclick=()=>answer(false);$("#bYes").onclick=()=>answer(true);
+  stage.querySelectorAll(".tool").forEach(b=>b.onclick=()=>useTool(b.dataset.tool));
+  bindDrag($("#post"));startTimer(l.time);
+}
+function useTool(t){
+  if(locked||S.used[t])return;const b=stage.querySelector(`[data-tool="${t}"]`);if(!b)return;
+  S.used[t]=1;S.clues++;S.score=Math.max(0,S.score-30);b.classList.add("used");b.disabled=true;
+  const f=b.querySelector(".found");f.textContent=S.cur.clues[t];f.hidden=false;renderHud();
+}
+/* timer */
+function startTimer(sec){stopTimer();const t0=performance.now(),dur=sec*1000;S.tLeft=sec;
+  const step=now=>{const left=Math.max(0,dur-(now-t0));S.tLeft=left/1000;setTimer(left/dur);
+    if(left<=0){answer(null);return}timerRAF=requestAnimationFrame(step)};timerRAF=requestAnimationFrame(step);}
+function stopTimer(){cancelAnimationFrame(timerRAF)}
+
+/* drag */
+function bindDrag(el){
+  let sx=0,dx=0,active=false,id=null;const hr=el.querySelector(".hint-r"),hl=el.querySelector(".hint-l");
+  el.addEventListener("pointerdown",e=>{if(locked)return;active=true;id=e.pointerId;sx=e.clientX;dx=0;el.classList.add("dragging");el.classList.remove("enter");try{el.setPointerCapture(id)}catch(_){} });
+  el.addEventListener("pointermove",e=>{if(!active)return;dx=e.clientX-sx;el.style.transform=`translateX(${dx}px) rotate(${dx/18}deg)`;
+    hr.style.opacity=Math.max(0,Math.min(1,dx/110));hl.style.opacity=Math.max(0,Math.min(1,-dx/110));});
+  const end=()=>{if(!active)return;active=false;el.classList.remove("dragging");
+    if(Math.abs(dx)>110){answer(dx>0)}else{el.style.transition="transform .35s cubic-bezier(.3,1.4,.5,1)";el.style.transform="";hr.style.opacity=0;hl.style.opacity=0;setTimeout(()=>el.style.transition="",360)}};
+  el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);
+}
+document.addEventListener("keydown",e=>{
+  if(!S||locked||!$("#post"))return;if(e.target.closest&&e.target.closest("textarea,input"))return;
+  if(e.key==="ArrowLeft"){e.preventDefault();answer(false)}
+  else if(e.key==="ArrowRight"){e.preventDefault();answer(true)}
+  else if(LEVELS[S.level].tools&&["1","2","3"].includes(e.key)){useTool(["source","context","confirm"][+e.key-1])}
+});
+
+/* answer */
+function answer(choice){
+  if(locked)return;locked=true;stopTimer();
+  const k=S.cur,post=$("#post"),ok=choice!==null&&choice===k.truth;
+  $("#bNo").disabled=$("#bYes").disabled=true;stage.querySelectorAll(".tool").forEach(b=>b.disabled=true);
+  post.querySelector(".hint-r").style.opacity=0;post.querySelector(".hint-l").style.opacity=0;
+  post.style.transform="";post.classList.add(k.truth?"show-t":"show-f");
+  let pts=0;
+  if(ok){S.streak++;S.best=Math.max(S.best,S.streak);pts=Math.round((100+Math.round(S.tLeft)*5)*mult());S.score+=pts;S.correct++;S.lvlCorrect[S.level]++}
+  else{S.streak=0;S.lives--;shake()}
+  S.answered++;S.done++;S.log.push({k,ok,choice});renderHud();
+  const head=choice===null?"Aeg sai otsa":(ok?"Õige!":"Seekord mitte");
+  const sub=k.truth?"See postitus on usaldusväärne.":"See postitus on väärinfo või pettus.";
+  $("#verdictSlot").innerHTML=`<div class="verdict ${ok?"ok":"bad"}">
+    <div class="verdict-top"><h4>${head}</h4><span class="pts">${ok?"+"+pts+" p":(S.lives>0?"−1 usaldus":"")}</span></div>
+    <p style="font-weight:600">${sub}</p>
+    <ul class="flags ${k.truth?"good":""}">${k.flags.map(f=>`<li>${f}</li>`).join("")}</ul>
+    <p class="explain">${k.explain}</p>
+    <button class="btn btn-primary" id="next" type="button" style="align-self:flex-start">${S.lives<=0?"Vaata tulemust":"Järgmine juhtum"}</button>
+  </div>`;
+  $("#choices").hidden=true;
+  const nx=$("#next");nx.focus({preventScroll:true});
+  nx.onclick=()=>{post.classList.add(k.truth?"fly-r":"fly-l");setTimeout(()=>{S.idx++;if(S.lives<=0)return endGame(false);nextCase()},reduce?0:380)};
+  const v=$("#verdictSlot");if(v.getBoundingClientRect().bottom>innerHeight)v.scrollIntoView({behavior:reduce?"auto":"smooth",block:"nearest"});
+}
+function shake(){const d=$("#desk");if(reduce||!d.animate)return;d.animate([{transform:"translateX(0)"},{transform:"translateX(-8px)"},{transform:"translateX(7px)"},{transform:"translateX(-4px)"},{transform:"translateX(0)"}],{duration:380})}
+function levelEnd(){
+  stopTimer();const n=CASES[S.level].length,c=S.lvlCorrect[S.level];
+  if(S.level>=LEVELS.length-1)return endGame(true);
+  stage.innerHTML=`<div class="screen">
+    <span class="eyebrow">${S.level+1}. tase läbitud</span>
+    <h3>${c===n?"Laitmatu!":c>=n-2?"Väga hea töö!":"Tase läbitud"}</h3>
+    <p class="lead">Lahendasid õigesti ${c} juhtumit ${n}-st. Punkte on sul praegu ${S.score}.</p>
+    <button class="btn btn-primary" id="go" type="button">Edasi: ${LEVELS[S.level+1].name}</button>
+  </div>`;
+  if(c===n)confetti();
+  $("#go").onclick=()=>{S.level++;S.idx=0;S.queue=shuffle(CASES[S.level]);levelIntro()};$("#go").focus({preventScroll:true});
+}
+function rankFor(acc){if(acc>=.95)return["Tõejahi meister","Sa näed manipuleerimise läbi. Jaga oma oskusi teistega!"];
+  if(acc>=.8)return["Faktikontrollija","Tugev tulemus. Mõni nipp suudab sind veel üllatada."];
+  if(acc>=.6)return["Uurija","Hea algus. Kasuta rohkem vihjeid ja ära kiirusta."];
+  return["Algaja kahtleja","Iga mäng teeb sind teravamaks. Proovi uuesti!"]}
+function endGame(finished){
+  stopTimer();setTimer(0);
+  const acc=S.answered?S.correct/S.answered:0,[rank,txt]=rankFor(finished?acc:Math.min(acc,.59));
+  const best=Math.max(store.get("tj-best",0),S.score);store.set("tj-best",best);store.set("tj-plays",store.get("tj-plays",0)+1);
+  stage.innerHTML=`<div class="screen">
+    <span class="eyebrow">${finished?"Kõik toimikud suletud":"Usaldus sai otsa"}</span>
+    <div class="rank"><div class="rank-badge" style="--p:${Math.round(acc*100)}%"><span>${Math.round(acc*100)}%</span></div></div>
+    <h3>${rank}</h3>
+    <p class="lead">${txt}</p>
+    <div class="result-grid">
+      <div class="res"><b>${S.score}</b><span>punkti</span></div>
+      <div class="res"><b>${S.correct}/${S.answered}</b><span>õiget otsust</span></div>
+      <div class="res"><b>${S.best}</b><span>pikim seeria</span></div>
+      <div class="res"><b>${S.clues}</b><span>kasutatud vihjet</span></div>
+    </div>
+    <div class="review">${S.log.map(r=>`<div class="review-row"><span class="dot" style="background:${r.ok?"var(--stamp-true)":"var(--stamp-false)"}"></span><span><b>${r.k.author}:</b> ${r.k.truth?"usaldusväärne":"väärinfo"}${r.choice===null?" (aeg sai otsa)":""}</span></div>`).join("")}</div>
+    <div class="share">
+      <button class="btn btn-primary" id="again" type="button">Mängi uuesti</button>
+      <button class="btn btn-ghost" id="copy" type="button">Kopeeri tulemus</button>
+      <a class="btn btn-ghost" href="#tagasiside">Anna tagasisidet</a>
+    </div>
+    <p class="keys">Sinu parim tulemus: <b>${best}</b> punkti</p>
+  </div>`;
+  if(finished&&acc>=.8)confetti();
+  $("#again").onclick=()=>{newGame();levelIntro()};
+  $("#copy").onclick=()=>{const t=`Sain Tõejahis ${S.score} punkti ja tiitli „${rank}“ (${S.correct}/${S.answered} õiget). Kas sina tunned vale ära?`;
+    const done=()=>toast("Tulemus kopeeritud");
+    try{navigator.clipboard.writeText(t).then(done,()=>fallbackCopy(t))}catch(e){fallbackCopy(t)}};
+  $("#again").focus({preventScroll:true});
+}
+function fallbackCopy(t){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();let ok=false;try{ok=document.execCommand("copy")}catch(e){}ta.remove();toast(ok?"Tulemus kopeeritud":t)}
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),2600)}
+function confetti(){if(reduce)return;const box=$("#confetti"),cols=["#1F5FD6","#111111","#FFFFFF","#178A5E","#F2B544"];
+  for(let i=0;i<70;i++){const p=document.createElement("i");p.style.left=Math.random()*100+"%";p.style.background=cols[i%cols.length];p.style.animationDuration=(1.6+Math.random()*1.6)+"s";p.style.animationDelay=Math.random()*.4+"s";p.style.boxShadow="0 0 0 1px rgba(0,0,0,.08)";box.appendChild(p);setTimeout(()=>p.remove(),3800)}}
+
+$("#heroPlay").addEventListener("click",()=>{setTimeout(()=>{const g=$("#go");if(g)g.focus({preventScroll:true})},500)});
+startScreen();
+
+})();
+</script>
+
+</body></html>
